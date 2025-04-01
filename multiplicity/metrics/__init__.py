@@ -1,13 +1,13 @@
 """Metrics module for multiplicity package."""
 
 from .multiplicity import (
-    multiplicity_score,
-    decision_boundary_analysis,
-    stability_score
+    rashomon_set,
+    arbitrariness,
+    pairwise_disagreement
 )
 
 __all__ = [
-    "multiplicity_score",
-    "decision_boundary_analysis",
-    "stability_score"
+    "rashomon_set",
+    "arbitrariness",
+    "pairwise_disagreement"
 ] 
