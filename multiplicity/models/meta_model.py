@@ -1,12 +1,10 @@
-from typing import Any, Dict, Optional, Tuple, Union
-
+from typing import Any, Dict
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.metrics import accuracy_score
 from sklearn.utils.validation import check_X_y, check_array
 
 from .base import BaseMultiplicityModel
-
 
 class MultiplicityModel(BaseMultiplicityModel):
     """Meta-model that combines classification and regression for predictive multiplicity analysis."""

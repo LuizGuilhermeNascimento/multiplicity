@@ -1,6 +1,5 @@
-from typing import Optional, Tuple, Union
 import numpy as np
-from sklearn.metrics import pairwise_distances
+from itertools import combinations
 
 
 def rashomon_set(models_dict: dict, X: np.ndarray, y: np.ndarray, epsilon=0.05) -> dict:
