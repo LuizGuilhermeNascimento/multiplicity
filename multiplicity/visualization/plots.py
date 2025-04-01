@@ -1,140 +1,55 @@
-from typing import Optional, Tuple
-
+from typing import Optional, Dict, List
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
-from sklearn.decomposition import PCA
 
 
-def plot_decision_boundaries(
-    X: np.ndarray,
-    scores: np.ndarray,
-    title: str = "Decision Boundary Analysis",
-    n_components: int = 2
+def plot_prob_dist(
+    probs: Dict[str, List[float]], 
+    title: str = "Probability Distribution",
+    reference_scores: Optional[List[float]] = None,
+    reference_label: str = "Reference",
+    save_path: Optional[str] = None
 ) -> None:
-    """Plot decision boundaries with multiplicity scores.
+    """Plot probability distribution for each fold with optional reference distribution.
     
     Args:
-        X: Input data points
-        scores: Multiplicity scores for each point
+        probs: Dictionary mapping fold names to probability lists
         title: Plot title
-        n_components: Number of PCA components for visualization
+        reference_scores: Optional list of reference probabilities to compare against
+        reference_label: Label for the reference distribution
+        save_path: Optional path to save the plot instead of displaying it
     """
-    if X.shape[1] > 2:
-        pca = PCA(n_components=n_components)
-        X_plot = pca.fit_transform(X)
-    else:
-        X_plot = X
+    sns.reset_defaults()
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Plot reference distribution first if provided
+    if reference_scores is not None:
+        sns.kdeplot(
+            reference_scores, 
+            label=reference_label, 
+            ax=ax,
+            linestyle='--',
+            color='black',
+            linewidth=2,
+            fill=False
+        )
+    
+    # Plot fold distributions
+    for fold, probabilities in probs.items():
+        sns.kdeplot(probabilities, label=fold, fill=True, ax=ax, alpha=0.5)
 
-    plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(X_plot[:, 0], X_plot[:, 1], c=scores, cmap='viridis')
-    plt.colorbar(scatter, label='Multiplicity Score')
-    plt.title(title)
-    plt.xlabel('Component 1' if X.shape[1] > 2 else 'Feature 1')
-    plt.ylabel('Component 2' if X.shape[1] > 2 else 'Feature 2')
-    plt.show()
+    ax.set_title(title)
+    ax.set_xlabel('Predicted Probability')
+    ax.set_ylabel('Density')
+    ax.legend()
 
-
-def plot_regression_curves(
-    model: "MultiplicityModel",
-    X: np.ndarray,
-    feature_idx: int = 0,
-    n_points: int = 100
-) -> None:
-    """Plot regression curves for different classifier probabilities.
-    
-    Args:
-        model: Trained MultiplicityModel instance
-        X: Input data
-        feature_idx: Index of feature to plot
-        n_points: Number of points for plotting
-    """
-    x_min, x_max = X[:, feature_idx].min(), X[:, feature_idx].max()
-    x_plot = np.linspace(x_min, x_max, n_points)
-    
-    # Create test points
-    X_test = np.tile(X.mean(axis=0), (n_points, 1))
-    X_test[:, feature_idx] = x_plot
-    
-    # Get predictions
-    y_pred = model.predict(X_test)
-    probs = model.predict_proba(X_test)[:, 1]
-    
-    plt.figure(figsize=(10, 6))
-    plt.scatter(x_plot, y_pred, c=probs, cmap='viridis')
-    plt.colorbar(label='Classifier Probability')
-    plt.title('Regression Curves')
-    plt.xlabel(f'Feature {feature_idx}')
-    plt.ylabel('Prediction')
-    plt.show()
-
-
-def plot_multiplicity_heatmap(
-    X: np.ndarray,
-    scores: np.ndarray,
-    n_bins: int = 50
-) -> None:
-    """Plot multiplicity heatmap for 2D data.
-    
-    Args:
-        X: 2D input data
-        scores: Multiplicity scores
-        n_bins: Number of bins for heatmap
-    """
-    if X.shape[1] != 2:
-        raise ValueError("Heatmap plotting requires 2D data")
-    
-    plt.figure(figsize=(10, 8))
-    
-    # Create 2D histogram
-    hist, xedges, yedges = np.histogram2d(
-        X[:, 0], X[:, 1],
-        bins=n_bins,
-        weights=scores
-    )
-    
-    # Plot heatmap
-    sns.heatmap(hist.T, cmap='viridis')
-    plt.title('Multiplicity Heatmap')
-    plt.xlabel('Feature 1')
-    plt.ylabel('Feature 2')
-    plt.show()
-
-
-def plot_stability_analysis(
-    X: np.ndarray,
-    stability_scores: np.ndarray,
-    n_components: int = 2
-) -> None:
-    """Plot stability analysis results.
-    
-    Args:
-        X: Input data
-        stability_scores: Stability scores for each instance
-        n_components: Number of PCA components for visualization
-    """
-    if X.shape[1] > 2:
-        pca = PCA(n_components=n_components)
-        X_plot = pca.fit_transform(X)
-    else:
-        X_plot = X
-    
-    plt.figure(figsize=(12, 6))
-    
-    # Plot stability scores
-    plt.subplot(1, 2, 1)
-    plt.hist(stability_scores, bins=50)
-    plt.title('Stability Score Distribution')
-    plt.xlabel('Stability Score')
-    plt.ylabel('Count')
-    
-    # Plot points colored by stability
-    plt.subplot(1, 2, 2)
-    scatter = plt.scatter(X_plot[:, 0], X_plot[:, 1], c=stability_scores, cmap='viridis')
-    plt.colorbar(scatter, label='Stability Score')
-    plt.title('Stability Analysis')
-    plt.xlabel('Component 1' if X.shape[1] > 2 else 'Feature 1')
-    plt.ylabel('Component 2' if X.shape[1] > 2 else 'Feature 2')
-    
     plt.tight_layout()
-    plt.show() 
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
+    
+    plt.close()
+    sns.reset_defaults()
