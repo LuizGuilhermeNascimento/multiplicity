@@ -10,16 +10,14 @@ A Python package for analyzing predictive multiplicity in machine learning model
    - Flexible architecture for different model combinations
 
 2. **Multiplicity Analysis**
-   - Multiplicity scoring
-   - Decision boundary analysis
-   - Stability evaluation
-   - Comprehensive visualization tools
+   - Rashomon set
+   - Arbitrariness
+   - Pairwise disagreement
 
 3. **Visualization Tools**
-   - Decision boundary plots
-   - Regression curves
-   - Multiplicity heatmaps
-   - Stability analysis plots
+   - Probability distribution plot for experiments
+
+4. **Reconcile algorithm**
 
 ## Contributing
 
