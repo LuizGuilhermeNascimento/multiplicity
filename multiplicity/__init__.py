@@ -4,7 +4,10 @@ multiplicity - A package for analyzing predictive multiplicity in machine learni
 
 from . import metrics
 from . import models
-from .models import MultiplicityModel
+from .models import (
+    MultiplicityModel,
+    BaggingModel,
+)
 from .metrics.multiplicity import (
     rashomon_set,
     arbitrariness,
@@ -21,6 +24,7 @@ __all__ = [
     "metrics",
     "models",
     "MultiplicityModel",  # For backward compatibility and convenience
+    "BaggingModel",
     "rashomon_set",
     "arbitrariness",
     "pairwise_disagreement",
