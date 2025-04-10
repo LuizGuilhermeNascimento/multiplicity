@@ -13,7 +13,7 @@ class BaggingModel:
         n_estimators: int = 10,
         max_samples: Union[int, float] = 1.0,
         bootstrap: bool = True,
-        n_jobs: int = -1,
+        n_jobs: int = 1,
         random_state: Optional[int] = None
     ) -> None:
         """
@@ -135,7 +135,7 @@ class BaggingModel:
         ])
         
         # For classification tasks
-        if predictions.dtype.kind in {'U', 'S', 'O'} or len(predictions.shape) > 2:
+        if predictions.dtype.kind in {'U', 'S', 'O', "i"} or len(predictions.shape) > 2:
             # Use mode for classification
             return np.apply_along_axis(
                 lambda x: np.bincount(x).argmax(),
