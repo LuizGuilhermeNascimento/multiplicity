@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple, List, Callable, Set
-
+from typing import Any, Dict
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
-from dataclasses import dataclass
 
 
 class BaseMultiplicityModel(BaseEstimator, ABC):
@@ -48,19 +46,6 @@ class BaseMultiplicityModel(BaseEstimator, ABC):
     def get_reference_reg(self) -> RegressorMixin:
         """Get the reference regressor."""
         pass
-
-class Event:
-    """Event class representing a disagreement between predictors
-    
-    Args:
-        loss_fn: Loss function used to evaluate predictions
-        action1: First action (0 or 1)
-        action2: Second action (0 or 1)
-    """
-    def __init__(self, loss_fn: Callable, action1: int, action2: int):
-        self.loss_fn = loss_fn
-        self.action1 = action1
-        self.action2 = action2
 
 class BasePredictor:
     """Base class for binary classifiers that can be updated

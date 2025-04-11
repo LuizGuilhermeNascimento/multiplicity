@@ -1,11 +1,9 @@
-from typing import Tuple, Dict, Any, Optional, Callable
+from typing import Tuple, Any
 import numpy as np
 import pandas as pd
 import itertools
-from datetime import datetime
 from numpy.typing import NDArray
 from enum import Enum
-from ..models.neural import NeuralPredictor
 
 # Type variables for better type hints
 FloatArray = NDArray[np.float64]
@@ -16,7 +14,8 @@ class Subscript(Enum):
 
 class Reconcile:
 
-    def _calculate_probability_mass(data: pd.DataFrame, subset: pd.DataFrame) -> float:
+    @staticmethod
+    def calculate_probability_mass(data: pd.DataFrame, subset: pd.DataFrame) -> float:
         """Calculate the probability mass of a subset in relation to the full dataset.
         
         Args:
@@ -28,7 +27,8 @@ class Reconcile:
         """
         return len(subset) / len(data) if len(data) > 0 else 0
 
-    def _round_to_fraction(value: float, m: int) -> float:
+    @staticmethod
+    def round_to_fraction(value: float, m: int) -> float:
         """Round a value to the nearest fraction determined by m.
         
         Args:
@@ -40,7 +40,8 @@ class Reconcile:
         """
         return round(value * m) / m
 
-    def _find_disagreement_set(
+    @staticmethod
+    def find_disagreement_set(
         f1_preds: np.ndarray,
         f2_preds: np.ndarray,
         X: pd.DataFrame,
@@ -57,7 +58,8 @@ class Reconcile:
 
         return u_idx, u_greater_idx, u_smaller_idx
 
-    def _find_candidate_for_update(
+    @staticmethod
+    def find_candidate_for_update(
         u_greater_idx: pd.Index,
         u_smaller_idx: pd.Index,
         X: pd.DataFrame,
@@ -78,15 +80,16 @@ class Reconcile:
         ]
 
         violations = []
-        for subscript, i in itertools.product([Subscript.GREATER, Subscript.SMALLER], [0, 1]):
-            prob_mass = len(u[subscript]) / len(X)
+        for subscript, i in itertools.product([Subscript.GREATER.value, Subscript.SMALLER.value], [0, 1]):
+            prob_mass = Reconcile.calculate_probability_mass(X, X.loc[u[subscript]])
             violation = prob_mass * (v_star[subscript] - v[i][subscript]) ** 2
             violations.append((violation, subscript, i))
 
         max_violation = max(violations, key=lambda x: x[0])
         return max_violation[1], max_violation[2]
 
-    def _patch(predictions: np.ndarray, indices: pd.Index, delta: float, all_indices: pd.Index) -> np.ndarray:
+    @staticmethod
+    def patch(predictions: np.ndarray, indices: pd.Index, delta: float, all_indices: pd.Index) -> np.ndarray:
         new_predictions = predictions.copy()
         mask = all_indices.isin(indices)
         new_predictions[mask] += delta
@@ -107,11 +110,11 @@ class Reconcile:
 
         all_indices = X.index
 
-        u_idx, u_greater_idx, u_smaller_idx = _find_disagreement_set(f1_preds, f2_preds, X, epsilon)
+        u_idx, u_greater_idx, u_smaller_idx = Reconcile.find_disagreement_set(f1_preds, f2_preds, X, epsilon)
         t = 0
 
-        while calculate_probability_mass(X, X.loc[u_idx]) >= alpha and t < max_iterations:
-            subscript, i = _find_candidate_for_update(u_greater_idx, u_smaller_idx, X, y, f1_preds, f2_preds)
+        while Reconcile.calculate_probability_mass(X, X.loc[u_idx]) >= alpha and t < max_iterations:
+            subscript, i = Reconcile.find_candidate_for_update(u_greater_idx, u_smaller_idx, X, y, f1_preds, f2_preds)
 
             g_idx = u_greater_idx if subscript == Subscript.GREATER else u_smaller_idx
             true_labels_subset = y.loc[g_idx]
@@ -119,15 +122,17 @@ class Reconcile:
             if i == 0:
                 predictions_subset = f1_preds[g_idx]
                 delta = np.mean(true_labels_subset) - np.mean(predictions_subset)
-                delta = round_to_fraction(delta, m)
-                f1_preds = _patch(f1_preds, g_idx, delta, all_indices)
+                delta = Reconcile.round_to_fraction(delta, m)
+                f1_preds = Reconcile.patch(f1_preds, g_idx, delta, all_indices)
             else:
                 predictions_subset = f2_preds[g_idx]
                 delta = np.mean(true_labels_subset) - np.mean(predictions_subset)
-                delta = round_to_fraction(delta, m)
-                f2_preds = _patch(f2_preds, g_idx, delta, all_indices)
+                delta = Reconcile.round_to_fraction(delta, m)
+                f2_preds = Reconcile.patch(f2_preds, g_idx, delta, all_indices)
 
             t += 1
-            u_idx, u_greater_idx, u_smaller_idx = _find_disagreement_set(f1_preds, f2_preds, X, epsilon)
+            u_idx, u_greater_idx, u_smaller_idx = Reconcile.find_disagreement_set(f1_preds, f2_preds, X, epsilon)
+
+        print(t)
 
         return f1_preds, f2_preds

@@ -1,8 +1,5 @@
 """Utility functions for the multiplicity package."""
-from .reconcile import Reconcile
-from .reconcile import (
-    Reconcile,
-    ReconcileCalibration
-)
+from .calibration import ReconcileCalibration
+from .linear import Reconcile
 
-__all__ = ["Reconcile"] 
+__all__ = ["ReconcileCalibration", "Reconcile"] 
