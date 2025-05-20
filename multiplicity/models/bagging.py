@@ -1,5 +1,6 @@
 from typing import List, Optional, Union, Any
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.utils import check_random_state
 from concurrent.futures import ThreadPoolExecutor
@@ -46,8 +47,8 @@ class BaggingModel:
     def _fit_estimator(
         self, 
         estimator: BaseEstimator, 
-        X: np.ndarray, 
-        y: np.ndarray, 
+        X: Union[np.ndarray, pd.DataFrame],
+        y: Union[np.ndarray, pd.Series],
         sample_indices: np.ndarray
     ) -> BaseEstimator:
         """
@@ -69,11 +70,16 @@ class BaggingModel:
         BaseEstimator
             The fitted estimator
         """
-        X_subset = X[sample_indices]
-        y_subset = y[sample_indices]
+        if isinstance(X, pd.DataFrame):
+            X_subset = X.iloc[sample_indices]
+            y_subset = y.iloc[sample_indices]
+        else:
+            X_subset = X[sample_indices]
+            y_subset = y[sample_indices]
+        
         return estimator.fit(X_subset, y_subset)
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> 'BaggingModel':
+    def fit(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.Series]) -> 'BaggingModel':
         """
         Fit the bagging model.
 
