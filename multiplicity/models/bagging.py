@@ -110,7 +110,18 @@ class BaggingModel:
             for i in range(self.n_estimators):
                 estimator = clone(self.base_estimator)
                 if self.bootstrap:
-                    indices = self.random_state_.randint(0, n_samples, max_samples)
+                    # if y is binary, keep ratio of labels
+                    if len(np.unique(y)) == 2:
+                        pos_idx = np.where(y == 1)[0]
+                        neg_idx = np.where(y == 0)[0]
+                        pos_samples = int(max_samples * pos_idx.shape[0] / y.shape[0])
+                        neg_samples = max_samples - pos_samples
+                        indices = np.concatenate(
+                            [self.random_state_.choice(pos_idx, pos_samples, replace=True),
+                             self.random_state_.choice(neg_idx, neg_samples, replace=True)]
+                        )
+                    else:
+                        indices = self.random_state_.randint(0, n_samples, max_samples)
                 else:
                     indices = self.random_state_.permutation(n_samples)[:max_samples]
                 
