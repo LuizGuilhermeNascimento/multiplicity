@@ -14,7 +14,7 @@ def rashomon_set(models_dict: dict, X: np.ndarray, y: np.ndarray, epsilon=0.05) 
     Returns:
         dict: Rashomon set of models
     """
-    loss_dict = {model_name: np.abs(y - model.predict(X)) for model_name, model in models_dict.items()}
+    loss_dict = {model_name: np.abs(y - model.predict(X)).mean() for model_name, model in models_dict.items()}
     error_ref = sorted(list(loss_dict.values()))[0]
 
     rashomon_set = {model_name: model for model_name, model in models_dict.items() if loss_dict[model_name] <= (1 + epsilon) * error_ref}

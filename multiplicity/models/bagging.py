@@ -1,5 +1,6 @@
 from typing import List, Optional, Union, Any
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.utils import check_random_state
 from concurrent.futures import ThreadPoolExecutor
@@ -13,7 +14,7 @@ class BaggingModel:
         n_estimators: int = 10,
         max_samples: Union[int, float] = 1.0,
         bootstrap: bool = True,
-        n_jobs: int = -1,
+        n_jobs: int = 1,
         random_state: Optional[int] = None
     ) -> None:
         """
@@ -46,8 +47,8 @@ class BaggingModel:
     def _fit_estimator(
         self, 
         estimator: BaseEstimator, 
-        X: np.ndarray, 
-        y: np.ndarray, 
+        X: Union[np.ndarray, pd.DataFrame],
+        y: Union[np.ndarray, pd.Series],
         sample_indices: np.ndarray
     ) -> BaseEstimator:
         """
@@ -69,11 +70,16 @@ class BaggingModel:
         BaseEstimator
             The fitted estimator
         """
-        X_subset = X[sample_indices]
-        y_subset = y[sample_indices]
+        if isinstance(X, pd.DataFrame):
+            X_subset = X.iloc[sample_indices]
+            y_subset = y.iloc[sample_indices]
+        else:
+            X_subset = X[sample_indices]
+            y_subset = y[sample_indices]
+        
         return estimator.fit(X_subset, y_subset)
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> 'BaggingModel':
+    def fit(self, X: Union[np.ndarray, pd.DataFrame], y: Union[np.ndarray, pd.Series]) -> 'BaggingModel':
         """
         Fit the bagging model.
 
@@ -104,7 +110,18 @@ class BaggingModel:
             for i in range(self.n_estimators):
                 estimator = clone(self.base_estimator)
                 if self.bootstrap:
-                    indices = self.random_state_.randint(0, n_samples, max_samples)
+                    # if y is binary, keep ratio of labels
+                    if len(np.unique(y)) == 2:
+                        pos_idx = np.where(y == 1)[0]
+                        neg_idx = np.where(y == 0)[0]
+                        pos_samples = int(max_samples * pos_idx.shape[0] / y.shape[0])
+                        neg_samples = max_samples - pos_samples
+                        indices = np.concatenate(
+                            [self.random_state_.choice(pos_idx, pos_samples, replace=True),
+                             self.random_state_.choice(neg_idx, neg_samples, replace=True)]
+                        )
+                    else:
+                        indices = self.random_state_.randint(0, n_samples, max_samples)
                 else:
                     indices = self.random_state_.permutation(n_samples)[:max_samples]
                 
@@ -135,7 +152,7 @@ class BaggingModel:
         ])
         
         # For classification tasks
-        if predictions.dtype.kind in {'U', 'S', 'O'} or len(predictions.shape) > 2:
+        if predictions.dtype.kind in {'U', 'S', 'O', "i"} or len(predictions.shape) > 2:
             # Use mode for classification
             return np.apply_along_axis(
                 lambda x: np.bincount(x).argmax(),
