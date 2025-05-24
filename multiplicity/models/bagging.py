@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from multiprocessing import cpu_count
 
-class BaggingModel:
+class BaggingModel(BaseEstimator):
     def __init__(
         self,
         base_estimator: BaseEstimator,
