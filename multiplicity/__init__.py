@@ -7,6 +7,7 @@ from . import models
 from .models import (
     MultiplicityModel,
     BaggingModel,
+    ReconcileGBM
 )
 from .metrics.multiplicity import (
     rashomon_set,
@@ -23,8 +24,9 @@ __version__ = "0.1.0"
 __all__ = [
     "metrics",
     "models",
-    "MultiplicityModel",  # For backward compatibility and convenience
+    "MultiplicityModel",
     "BaggingModel",
+    "ReconcileGBM",
     "rashomon_set",
     "arbitrariness",
     "pairwise_disagreement",
