@@ -16,7 +16,7 @@ class ReconcileModel:
         deltas (List[float]): A list of scaling factors (one per regressor) used during reconciliation.
     """
 
-    def __init__(self, base_pred: np.ndarray, trees: List[Any], deltas: List[float]) -> None:
+    def __init__(self, base_f: Callable[[np.ndarray], np.ndarray], trees: List[Any], deltas: List[float]) -> None:
         """
         Initializes the ReconcileModel.
 
@@ -25,7 +25,7 @@ class ReconcileModel:
             trees (List[Any]): List of trained regressors.
             deltas (List[float]): List of delta values scaling the contribution of each tree.
         """
-        self.base_pred = base_pred
+        self.base_f = base_f
         self.trees = trees
         self.deltas = deltas
 
@@ -39,12 +39,8 @@ class ReconcileModel:
         Returns:
             np.ndarray: Binary predictions (0 or 1).
         """
-        pred = self.base_pred
-        for tree, delta in zip(self.trees, self.deltas):
-            h_pred = tree.predict(X)
-            pred = pred + delta * (h_pred - pred)
-        pred = np.clip(pred, 0.0, 1.0)
-        return (pred >= 0.5).astype(int)
+        proba = self.predict_proba(X)
+        return (pred[:, 1] >= 0.5).astype(int)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
@@ -56,10 +52,10 @@ class ReconcileModel:
         Returns:
             np.ndarray: Probabilities for each class, shape (n_samples, 2).
         """
-        pred = self.base_pred
+        pred = self.base_f(X)
         for tree, delta in zip(self.trees, self.deltas):
             h_pred = tree.predict(X)
-            pred = pred + delta * (h_pred - pred)
+            pred += delta * h_pred
         pred = np.clip(pred, 0.0, 1.0)
         return np.column_stack([1 - pred, pred])
 
@@ -228,4 +224,4 @@ class ReconcileGBM(BaseEstimator):
             deltas.append(delta)
             t += 1
 
-        return ReconcileModel(f_t_preds, trees, deltas)
+        return ReconcileModel(f_source, trees, deltas)
