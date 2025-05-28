@@ -40,7 +40,7 @@ class ReconcileModel:
             np.ndarray: Binary predictions (0 or 1).
         """
         proba = self.predict_proba(X)
-        return (pred[:, 1] >= 0.5).astype(int)
+        return (proba[:, 1] >= 0.5).astype(int)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
@@ -197,7 +197,7 @@ class ReconcileGBM(BaseEstimator):
         f_t_preds = f_source(X)
         trees = []
         deltas = []
-        t = 0
+        t = 0f_t_preds
 
         while t < max_iterations:
             f_target_preds = f_target(X)
