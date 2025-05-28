@@ -55,9 +55,9 @@ class ReconcileModel:
         pred = self.base_f(X)
         for tree, delta in zip(self.trees, self.deltas):
             h_pred = tree.predict(X)
-            pred += delta * h_pred
-        pred = np.clip(pred, 0.0, 1.0)
-        return np.column_stack([1 - pred, pred])
+            pred += delta * (h_pred - pred)
+        final_pred = np.clip(pred, 0.0, 1.0)
+        return np.column_stack([1 - final_pred, final_pred])
 
 
 class ReconcileGBM(BaseEstimator):
