@@ -197,7 +197,7 @@ class ReconcileGBM(BaseEstimator):
         f_t_preds = f_source(X)
         trees = []
         deltas = []
-        t = 0f_t_preds
+        t = 0
 
         while t < max_iterations:
             f_target_preds = f_target(X)
