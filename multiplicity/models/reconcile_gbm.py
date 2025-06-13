@@ -16,7 +16,7 @@ class ReconcileModel:
         deltas (List[float]): A list of scaling factors (one per regressor) used during reconciliation.
     """
 
-    def __init__(self, base_f: Callable[[np.ndarray], np.ndarray], trees: List[Any], deltas: List[float]) -> None:
+    def __init__(self, base_f: Callable[[np.ndarray], np.ndarray], trees: List[Any], deltas: List[float], disagreements: List[np.ndarray]) -> None:
         """
         Initializes the ReconcileModel.
 
@@ -28,7 +28,8 @@ class ReconcileModel:
         self.base_f = base_f
         self.trees = trees
         self.deltas = deltas
-
+        self.disagreements = disagreements
+        
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Generates binary class predictions for input data.
@@ -197,11 +198,13 @@ class ReconcileGBM(BaseEstimator):
         f_t_preds = f_source(X)
         trees = []
         deltas = []
+        disagreements = []
         t = 0
 
         while t < max_iterations:
             f_target_preds = f_target(X)
             disagreement = np.abs(f_t_preds - f_target_preds) > epsilon
+            disagreements.append(disagreement)
             mass = np.mean(disagreement)
 
             if mass < alpha:
@@ -224,4 +227,4 @@ class ReconcileGBM(BaseEstimator):
             deltas.append(delta)
             t += 1
 
-        return ReconcileModel(f_source, trees, deltas)
+        return ReconcileModel(f_source, trees, deltas, disagreements)
