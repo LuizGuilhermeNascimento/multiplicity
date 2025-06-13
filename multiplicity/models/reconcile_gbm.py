@@ -206,7 +206,7 @@ class ReconcileGBM(BaseEstimator):
             disagreement = np.abs(f_t_preds - f_target_preds) > epsilon
             mass = np.mean(disagreement)
             disagreements.append(mass)
-
+            print(f"Iteration {t}: Disagreement mass = {disagreements}")
             if mass < alpha:
                 break
 
