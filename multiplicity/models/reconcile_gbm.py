@@ -225,3 +225,64 @@ class ReconcileGBM(BaseEstimator):
             t += 1
 
         return ReconcileModel(f_source, trees, deltas)
+
+    @staticmethod
+    def reconcile_multiple(
+        X: np.ndarray,
+        f_sources: List[Callable[[np.ndarray], np.ndarray]],
+        base_regressor_cls: type = DecisionTreeRegressor,
+        base_regressor_params: Optional[dict] = None,
+        alpha: float = 0.1,
+        epsilon: float = 0.1,
+        max_iterations: int = 10
+    ) -> List[ReconcileModel]:
+        """
+        Executa o procedimento de reconciliação para k modelos, ajustando cada um iterativamente
+        em relação à média das previsões dos k modelos.
+
+        Args:
+            X (np.ndarray): Dados de entrada.
+            f_sources (List[Callable]): Lista de funções de predição dos modelos fontes.
+            base_regressor_cls (type): Classe do regressor base.
+            base_regressor_params (dict): Parâmetros do regressor base.
+            alpha (float): Threshold mínimo de massa de discordância para continuar.
+            epsilon (float): Tolerância de discordância.
+            max_iterations (int): Número máximo de iterações.
+
+        Returns:
+            List[ReconcileModel]: Lista de modelos reconciliados, um para cada modelo fonte.
+        """
+        base_regressor_params = base_regressor_params or {}
+        k = len(f_sources)
+        f_t_preds_list = [f(X) for f in f_sources]
+        trees_list: List[List[Any]] = [[] for _ in range(k)]
+        deltas_list: List[List[float]] = [[] for _ in range(k)]
+        t = 0
+
+        while t < max_iterations:
+            # Calcula a média das previsões atuais
+            f_t_preds_stack = np.stack(f_t_preds_list, axis=0)  # shape: (k, n_samples)
+            f_target_preds = np.mean(f_t_preds_stack, axis=0)    # shape: (n_samples,)
+
+            for i in range(k):
+                disagreement = np.abs(f_t_preds_list[i] - f_target_preds) > epsilon
+                mass = np.mean(disagreement)
+                if mass < alpha:
+                    continue
+                X_dis = X[disagreement]
+                if X_dis.shape[0] == 0:
+                    continue
+                y_dis = f_target_preds[disagreement]
+                tree = base_regressor_cls(**base_regressor_params)
+                tree.fit(X_dis, y_dis)
+                h_t_preds = tree.predict(X)
+                delta = np.abs(np.mean(f_t_preds_list[i][disagreement]) - np.mean(f_target_preds[disagreement]))
+                f_t_preds_list[i] = f_t_preds_list[i] + delta * (h_t_preds - f_t_preds_list[i])
+                f_t_preds_list[i] = np.clip(f_t_preds_list[i], 0.0, 1.0)
+                trees_list[i].append(tree)
+                deltas_list[i].append(delta)
+            t += 1
+
+        # Cria um ReconcileModel para cada modelo fonte
+        models = [ReconcileModel(f_sources[i], trees_list[i], deltas_list[i]) for i in range(k)]
+        return models
