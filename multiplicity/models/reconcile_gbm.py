@@ -175,7 +175,7 @@ class ReconcileGBM(BaseEstimator):
         base_regressor_cls: type = DecisionTreeRegressor,
         base_regressor_params: Optional[dict] = None,
         alpha: float = 0.1,
-        epsilon_percentile: float = 0.5,
+        epsilon_percentile: int = 50,
         max_iterations: int = 10
     ) -> ReconcileModel:
         """
@@ -204,7 +204,7 @@ class ReconcileGBM(BaseEstimator):
         while t < max_iterations:
             f_target_preds = f_target(X)
             abs_diffs = np.abs(f_t_preds - f_target_preds)
-            dynamic_epsilon = np.percentile(abs_diffs, epsilon_percentile * 100)
+            dynamic_epsilon = np.percentile(abs_diffs, epsilon_percentile)
 
             disagreement = abs_diffs > dynamic_epsilon
             mass = np.mean(disagreement)
@@ -239,7 +239,7 @@ class ReconcileGBM(BaseEstimator):
         base_regressor_cls: type = DecisionTreeRegressor,
         base_regressor_params: Optional[dict] = None,
         alpha: float = 0.1,
-        epsilon_percentile: float = 0.5,
+        epsilon_percentile: int = 50,
         max_iterations: int = 10
     ) -> List[ReconcileModel]:
         """
@@ -272,7 +272,7 @@ class ReconcileGBM(BaseEstimator):
 
             for i in range(k):
                 abs_diffs = np.abs(f_t_preds_list[i] - f_target_preds)
-                dynamic_epsilon = np.percentile(abs_diffs, epsilon_percentile * 100)
+                dynamic_epsilon = np.percentile(abs_diffs, epsilon_percentile)
 
                 disagreement = abs_diffs > dynamic_epsilon
                 mass = np.mean(disagreement)
