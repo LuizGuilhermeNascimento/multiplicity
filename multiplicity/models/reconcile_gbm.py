@@ -210,13 +210,14 @@ class ReconcileGBM(BaseEstimator):
             if mass < alpha:
                 break
 
-            X_dis = X[disagreement]
-            if X_dis.shape[0] == 0:
+            if np.sum(disagreement) == 0:
                 break
 
-            y_dis = f_target(X_dis)
+            y_prime = np.zeros_like(f_target_preds)
+            y_prime[disagreement] = f_target_preds[disagreement]
+            
             tree = base_regressor_cls(**base_regressor_params)
-            tree.fit(X_dis, y_dis)
+            tree.fit(X, y_prime)
             h_t_preds = tree.predict(X)
 
             delta = np.abs(np.mean(f_t_preds[disagreement]) - np.mean(f_target_preds[disagreement]))
